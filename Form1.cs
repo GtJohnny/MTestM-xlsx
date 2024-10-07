@@ -57,14 +57,13 @@ namespace Grile_2024
 
 
             int i = 5;
+            string v;
+
+            v = nextLine(sr);
             while (!sr.EndOfStream)
             {
-                string v;
-                v = nextLine(sr);
-                ws.Cells[i, 1] = v;
-                v = nextLine(sr);
 
-                ws.Cells[i, 1] += v;
+                ws.Cells[i, 1] = v + nextLine(sr);
 
 
                 for (int j = 2; j <= 4; j++)
@@ -75,10 +74,16 @@ namespace Grile_2024
                 }
 
                 v = nextLine(sr);
+                if(v==null || v == "")
+                {
+                    continue;
 
+                }
                 ws.Cells[i, 6] = v.Substring(v.Length - 1);
 
-                sr.ReadLine();
+                i++;
+
+                v = nextLine(sr);
 
                 /*
                 ws.Cells[i, 1] = sr.ReadLine() +"\n"+ sr.ReadLine();
