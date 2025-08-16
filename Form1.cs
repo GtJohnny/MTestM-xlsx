@@ -10,24 +10,24 @@ using System.Windows.Forms;
 using System.IO;
 using Excel = Microsoft.Office.Interop.Excel;
 using Microsoft.Office.Interop.Excel;
+using System.Diagnostics;
 
 namespace Grile_2024
 {
     public partial class Form1 : Form
     {
+        private string errorString = "�";
+
+
+        private string savePath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + "\\Grile\\Grila2donev2.xlsx";
+
+
         public Form1()
         {
             InitializeComponent();
         }
 
-
-        string nextLine(StreamReader sr)
-        {
-            string v = "";
-            while (v == "") v = sr.ReadLine();
-            return v;
-        }
-
+   
 
 
         void readFile(string file)
@@ -38,8 +38,7 @@ namespace Grile_2024
             Excel._Worksheet ws = workbook.ActiveSheet;
             ws.Range[ws.Cells[1,2],ws.Cells[1,6]].Merge();
             ws.Range[ws.Cells[2, 2], ws.Cells[2, 6]].Merge();
-            string title = file.Substring(file.LastIndexOf('\\') + 1);
-            title.Remove(title.Length-3);
+            string title = Path.GetFileNameWithoutExtension(file);
 
             ws.Cells[1, 1] = "Title";
             ws.Cells[1, 2] = title;
@@ -59,45 +58,20 @@ namespace Grile_2024
             int i = 5;
             string v;
 
-            v = nextLine(sr);
             while (!sr.EndOfStream)
             {
-
-                ws.Cells[i, 1] = v + nextLine(sr);
-
-
+                
+                ws.Cells[i, 1] = sr.ReadLine();
                 for (int j = 2; j <= 4; j++)
                 {
-                    v = nextLine(sr);
-
-                    ws.Cells[i, j] = v;
+                    ws.Cells[i, j] = sr.ReadLine().Substring(3);
                 }
 
-                v = nextLine(sr);
-                if(v==null || v == "")
-                {
-                    continue;
+                //string rasp = sr.ReadLine();
 
-                }
-                ws.Cells[i, 6] = v.Substring(v.Length - 1);
-
+                //ws.Cells[i, 6] = rasp.Substring(rasp.Length - 1);
                 i++;
-
-                v = nextLine(sr);
-
-                /*
-                ws.Cells[i, 1] = sr.ReadLine() +"\n"+ sr.ReadLine();
-                for (int j = 2; j <= 4; j++)
-                {
-                    ws.Cells[i, j] = sr.ReadLine();
-                }
-
-                string rasp = sr.ReadLine();
-
-                ws.Cells[i, 6] = rasp.Substring(rasp.Length - 1);
-                i++;
-                sr.ReadLine();
-                */
+                
             }
 
             string loc = Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + "\\Grile";
@@ -105,12 +79,16 @@ namespace Grile_2024
             {
                 Directory.CreateDirectory(loc);
             }
+            savePath = loc + "\\" + title + ".xlsx";
+            if (File.Exists(savePath))
+                File.Delete(savePath);
+            
 
-
-            workbook.SaveAs(loc+"\\"+title.Replace("txt","xlsx"));
-            workbook.Close();
+            workbook.SaveAs(savePath);
+            workbook.Close(true);
             sr.Close();
             app.Quit();
+            Process.Start(savePath);
 
 
         }
@@ -121,18 +99,157 @@ namespace Grile_2024
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            string res = Environment.CurrentDirectory+"\\Grile";
+          
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            string res = Environment.CurrentDirectory + "\\Grile";
             if (Directory.Exists(res))
             {
-                foreach(string file in Directory.GetFiles(res))
+                foreach (string file in Directory.GetFiles(res, "*.txt"))
                 {
                     readFile(file);
                 }
             }
             else
             {
-                throw new DirectoryNotFoundException();
+                Directory.CreateDirectory(res);
+                MessageBox.Show("No files found in the Grile directory. Please add some text files to process.");
             }
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            FileInfo file = new FileInfo(Environment.CurrentDirectory + "\\Grile\\Grila Principal1.txt");
+      
+            StreamReader sr = new StreamReader(file.FullName);
+            StringBuilder sb = new StringBuilder(sr.ReadToEnd());
+            int i = 0;
+            while(i< sb.Length)
+            {
+                if (sb[i] == '�')
+                {
+                    sb.Remove(i, 1);
+                    sb.Insert(i, "ti");
+                }
+                if (sb[i] == '.')
+                {
+                    for(int j = i-1;j>=i-5 && j>=0;j--)
+                    {
+                        if (sb[j] == ' ')
+                        {
+                            sb.Remove(j, 1);
+                            sb.Insert(j, "\r\n");
+                            i++;
+                            break;
+                        }
+                    }
+                }
+
+                i++;
+            }
+            textBox1.Text = sb.ToString();  
+            sr.Close();
+            File.WriteAllText(file.DirectoryName+"\\redone.txt", sb.ToString());
+
+
+        }
+
+        private void button3_Click(object sender, EventArgs e)
+        {
+            StreamReader sr = new StreamReader(Environment.CurrentDirectory + "\\raspPart1.txt");
+            textBox1.Clear();
+
+            int row = 5;
+
+
+            Excel.Application app = new Excel.Application();
+            Excel.Workbook workbook = app.Workbooks.Open(savePath);
+            Excel._Worksheet ws = workbook.ActiveSheet;
+
+
+
+
+
+
+            while (!sr.EndOfStream)
+            {
+                string line = sr.ReadLine();
+                foreach(char c in line)
+                {
+                    if (c >= 'a' && c <= 'z')
+                    {
+                        textBox1.AppendText($"{row}: {c}\r\n");
+                        ws.Cells[row++, 6] = c.ToString();
+                    }
+                }
+            }
+
+            workbook.Save();
+            workbook.Close(true);
+            sr.Close();
+            app.Quit();
+
+
+        }
+
+        private void button4_Click(object sender, EventArgs e)
+        {
+            StreamReader sr = new StreamReader(Environment.CurrentDirectory + "\\regexForta.txt");
+            int row = 465;
+
+
+
+            Excel.Application app = new Excel.Application();
+            Excel.Workbook workbook = app.Workbooks.Open(savePath);
+            Excel._Worksheet ws = workbook.ActiveSheet;
+
+
+
+
+
+
+            while (!sr.EndOfStream)
+            {
+                string line = sr.ReadLine();
+                if (row == 673) row++;
+                if (line.Length > 0)
+                {
+                    ws.Cells[row++, 6] = line;
+                }
+
+            }
+            workbook.Save();
+            workbook.Close(true);
+            sr.Close();
+            app.Quit();
+        }
+
+        private void button5_Click(object sender, EventArgs e)
+        {
+            Excel.Application app = new Excel.Application();
+            Excel.Workbook workbook = app.Workbooks.Open(savePath);
+            Excel._Worksheet ws = workbook.ActiveSheet;
+            int row = 500;
+            textBox1.Clear();
+            while(row <= 1034)
+            {
+                string text = ws.Cells[row, 6].Value2;
+                if (text.Contains("\r\n"))
+                {
+                    textBox1.AppendText(text);
+                    text = text.Replace("\r\n", "");
+                    ws.Cells[row, 6].Value2 = text+"\r\n";
+                }
+                row++;
+            }
+
+
+
+            workbook.Save();
+            workbook.Close(true);
+            app.Quit();
         }
     }
 }
